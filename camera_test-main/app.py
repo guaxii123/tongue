@@ -8,6 +8,7 @@ import cloudinary.uploader
 import tempfile
 import io
 from color_analysis import analyze_image_color
+from bson import ObjectId
 
 load_dotenv()
 
@@ -112,3 +113,25 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     print("✅ MongoDB 連線成功")
     app.run(host="0.0.0.0", port=port)
+
+
+@app.route("/add_comment", methods=["POST"])
+def add_comment():
+    data = request.json
+    record_id = data.get("record_id")
+    comment = data.get("comment")
+
+    if not record_id or not comment:
+        return jsonify({"error": "缺少 record_id 或 comment"}), 400
+
+    try:
+        result = records_collection.update_one(
+            {"_id": ObjectId(record_id)},
+            {"$set": {"doctor_comment": comment}}
+        )
+        if result.modified_count == 1:
+            return jsonify({"message": "留言儲存成功"})
+        else:
+            return jsonify({"error": "找不到紀錄或未修改"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
