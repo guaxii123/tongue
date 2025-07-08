@@ -103,14 +103,31 @@
           card.appendChild(time);
           card.onclick = () => {
             Swal.fire({
-              title: "🧠 中醫推論",
+              title: "🧠 中醫推論 & 醫師留言",
               html: `
                 <strong>舌苔主色：</strong> ${record.main_color}<br><br>
                 <strong>推論內容：</strong><br>${record.comment}<br><br>
-                <strong>醫療建議：</strong><br>${record.advice}
+                <strong>醫療建議：</strong><br>${record.advice}<br><br>
+                <textarea id="doctorComment" rows="3" style="width:100%;border:1px solid #ccc;padding:0.5rem;">${record.doctor_comment || ""}</textarea>
               `,
-              icon: "info",
-              confirmButtonText: "關閉"
+              showCancelButton: true,
+              confirmButtonText: "💾 儲存留言",
+              cancelButtonText: "取消"
+            }).then(res => {
+              if (res.isConfirmed) {
+                const newComment = document.getElementById("doctorComment").value.trim();
+                fetch("/add_comment", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ record_id: record._id, comment: newComment })
+                }).then(r => r.json()).then(result => {
+                  if (result.message) {
+                    Swal.fire("✅ 已儲存", "", "success").then(() => location.reload());
+                  } else {
+                    Swal.fire("❌ 儲存失敗", result.error || "未知錯誤", "error");
+                  }
+                });
+              }
             });
           };
           photoGrid.appendChild(card);
